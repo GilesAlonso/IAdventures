@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unicode Special Characters Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .lang-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: block;
+            color: #444;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 150px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+            background: #fff;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .summary h2 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .details-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .details-section h3 {
+            color: #444;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #4ecdc4;
+            padding-bottom: 5px;
+        }
+
+        .char-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .char-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .char-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .char-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .info-item {
+            background: #f0f8ff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #444;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .safe {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .positions {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .position-tag {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 5px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="language-selector">
+                <button class="lang-btn active" onclick="setLanguage('en', this)">🇺🇸 EN</button>
+                <button class="lang-btn" onclick="setLanguage('pt', this)">🇧🇷 PT</button>
+            </div>
+            <h1 data-key="title">🔍 Unicode Detector</h1>
+            <p data-key="subtitle">Analyze text for special characters, code injection and watermarks</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <label class="input-label" data-key="inputLabel">Paste text for analysis:</label>
+                <textarea class="text-input" id="textInput" data-key="placeholder"></textarea>
+                <br><br>
+                <button class="analyze-btn" onclick="analyzeText()">
+                    <span data-key="analyzeBtn">🔍 Analyze Text</span>
+                </button>
+            </div>
+
+            <div class="results" id="results">
+                <div class="summary" id="summary"></div>
+                <div id="detailsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLanguage = 'en';
+
+        const translations = {
+            en: {
+                title: '🔍 Unicode Detector',
+                subtitle: 'Analyze text for special characters, code injection and watermarks',
+                inputLabel: 'Paste text for analysis:',
+                placeholder: 'Paste your text here for analysis...',
+                analyzeBtn: '🔍 Analyze Text',
+                riskLevel: 'Risk Level',
+                totalChars: 'Total Characters',
+                suspiciousTypes: 'Suspicious Types',
+                occurrences: 'Occurrences',
+                cleanText: 'Clean Text',
+                noSuspicious: 'No suspicious characters found.',
+                suspiciousDetected: '🔍 Suspicious Characters Detected',
+                name: 'Name',
+                code: 'Code',
+                category: 'Category',
+                risk: 'Risk',
+                count: 'Count',
+                description: 'Description',
+                positions: 'Positions',
+                more: 'more',
+                pleaseEnterText: 'Please paste text for analysis.',
+                space: '(space)',
+                safe: 'Safe',
+                low: 'Low',
+                medium: 'Medium',
+                high: 'High',
+                categories: {
+                    'Non-Standard Whitespace': 'Non-Standard Whitespace',
+                    'Invisible Character': 'Invisible Character',
+                    'Directional Control': 'Directional Control',
+                    'Control Character': 'Control Character',
+                    'Special Unicode': 'Special Unicode'
+                },
+                descriptions: {
+                    0x200B: 'Used for invisible line breaks, can hide text',
+                    0x200C: 'Used to separate characters that would normally join',
+                    0x200D: 'Used to join characters, common in composite emojis',
+                    0x200E: 'Forces left-to-right direction, can alter rendering',
+                    0x200F: 'Forces right-to-left direction, can alter rendering',
+                    0x2060: 'Connects words without allowing line breaks',
+                    0x202A: 'Starts left-to-right embedding, can alter layout',
+                    0x202B: 'Starts right-to-left embedding, can alter layout',
+                    0x202C: 'Ends directional formatting',
+                    0x202D: 'Forces left-to-right override',
+                    0x202E: 'Forces right-to-left override',
+                    0xFEFF: 'Byte order mark, may indicate special encoding',
+                    default: 'Unicode character with potential use in watermarking or injection'
+                }
+            },
+            pt: {
+                title: '🔍 Detector Unicode',
+                subtitle: 'Analise textos para detectar caracteres especiais, injeções de código e marcas d\'água',
+                inputLabel: 'Cole o texto para análise:',
+                placeholder: 'Cole seu texto aqui para análise...',
+                analyzeBtn: '🔍 Analisar Texto',
+                riskLevel: 'Nível de Risco',
+                totalChars: 'Caracteres Total',
+                suspiciousTypes: 'Tipos Suspeitos',
+                occurrences: 'Ocorrências',
+                cleanText: 'Texto Limpo',
+                noSuspicious: 'Nenhum caractere suspeito encontrado.',
+                suspiciousDetected: '🔍 Caracteres Suspeitos Detectados',
+                name: 'Nome',
+                code: 'Código',
+                category: 'Categoria',
+                risk: 'Risco',
+                count: 'Contagem',
+                description: 'Descrição',
+                positions: 'Posições',
+                more: 'mais',
+                pleaseEnterText: 'Por favor, cole um texto para análise.',
+                space: '(espaço)',
+                safe: 'Seguro',
+                low: 'Baixo',
+                medium: 'Médio',
+                high: 'Alto',
+                categories: {
+                    'Non-Standard Whitespace': 'Espaço Não-Padrão',
+                    'Invisible Character': 'Caractere Invisível',
+                    'Directional Control': 'Controle Direcional',
+                    'Control Character': 'Caractere de Controle',
+                    'Special Unicode': 'Unicode Especial'
+                },
+                descriptions: {
+                    0x200B: 'Usado para quebras de linha invisíveis, pode esconder texto',
+                    0x200C: 'Usado para separar caracteres que normalmente se juntariam',
+                    0x200D: 'Usado para juntar caracteres, comum em emojis compostos',
+                    0x200E: 'Força direção da esquerda para direita, pode alterar renderização',
+                    0x200F: 'Força direção da direita para esquerda, pode alterar renderização',
+                    0x2060: 'Conecta palavras sem permitir quebra de linha',
+                    0x202A: 'Inicia embedding esquerda-direita, pode alterar layout',
+                    0x202B: 'Inicia embedding direita-esquerda, pode alterar layout',
+                    0x202C: 'Encerra formatação direcional',
+                    0x202D: 'Força sobreposição esquerda-direita',
+                    0x202E: 'Força sobreposição direita-esquerda',
+                    0xFEFF: 'Marca de ordem de bytes, pode indicar encoding especial',
+                    default: 'Caractere Unicode com potencial uso em marca d\'água ou injeção'
+                }
+            }
+        };
+
+        function setLanguage(lang, buttonElement = null) {
+            currentLanguage = lang;
+            
+            // Update button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Find the correct button to activate
+            if (buttonElement) {
+                buttonElement.classList.add('active');
+            } else {
+                const targetBtn = document.querySelector(`[onclick="setLanguage('${lang}')"]`);
+                if (targetBtn) targetBtn.classList.add('active');
+            }
+
+            // Update UI text
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.getAttribute('data-key');
+                if (translations[lang][key]) {
+                    if (element.tagName === 'TEXTAREA') {
+                        element.placeholder = translations[lang][key];
+                    } else {
+                        element.textContent = translations[lang][key];
+                    }
+                }
+            });
+
+            // Update placeholder
+            document.getElementById('textInput').placeholder = translations[lang].placeholder;
+
+            // Re-analyze if results are showing
+            if (document.getElementById('results').classList.contains('show')) {
+                analyzeText();
+            }
+        }
+
+        function t(key, ...args) {
+            let text = translations[currentLanguage][key] || key;
+            args.forEach((arg, index) => {
+                text = text.replace(`{${index}}`, arg);
+            });
+            return text;
+        }
+
+        function analyzeText() {
+            const text = document.getElementById('textInput').value;
+            const results = document.getElementById('results');
+            
+            if (!text.trim()) {
+                alert(t('pleaseEnterText'));
+                return;
+            }
+
+            const analysis = performAnalysis(text);
+            displayResults(analysis);
+            results.classList.add('show');
+        }
+
+        function performAnalysis(text) {
+            const suspiciousChars = [];
+            const charCounts = {};
+            const positions = {};
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const code = char.charCodeAt(0);
+                
+                // Detectar caracteres suspeitos
+                if (isSuspiciousChar(char, code)) {
+                    const charInfo = getCharacterInfo(char, code);
+                    
+                    if (!charCounts[code]) {
+                        charCounts[code] = 0;
+                        positions[code] = [];
+                        suspiciousChars.push(charInfo);
+                    }
+                    
+                    charCounts[code]++;
+                    positions[code].push(i);
+                }
+            }
+
+            // Adicionar contagens e posições
+            suspiciousChars.forEach(charInfo => {
+                charInfo.count = charCounts[charInfo.code];
+                charInfo.positions = positions[charInfo.code];
+            });
+
+            return {
+                text: text,
+                totalChars: text.length,
+                suspiciousChars: suspiciousChars,
+                totalSuspicious: suspiciousChars.reduce((sum, char) => sum + char.count, 0),
+                riskLevel: calculateRiskLevel(suspiciousChars)
+            };
+        }
+
+        function isSuspiciousChar(char, code) {
+            // Espaços em branco não padrão
+            if (isNonStandardWhitespace(char, code)) return true;
+            
+            // Caracteres de controle
+            if (code < 32 && code !== 9 && code !== 10 && code !== 13) return true;
+            
+            // Caracteres Unicode especiais
+            if (isSpecialUnicodeChar(char, code)) return true;
+            
+            // Caracteres invisíveis
+            if (isInvisibleChar(char, code)) return true;
+            
+            // Caracteres de direção de texto
+            if (isDirectionalChar(code)) return true;
+            
+            return false;
+        }
+
+        function isNonStandardWhitespace(char, code) {
+            const standardWhitespace = [32, 9, 10, 13]; // espaço, tab, LF, CR
+            return /\s/.test(char) && !standardWhitespace.includes(code);
+        }
+
+        function isSpecialUnicodeChar(char, code) {
+            // Caracteres de formatação
+            if (code >= 0x200B && code <= 0x200F) return true; // Zero-width chars
+            if (code >= 0x2028 && code <= 0x202F) return true; // Line/paragraph separators
+            if (code >= 0x2060 && code <= 0x206F) return true; // Invisible formatting
+            if (code >= 0xFE00 && code <= 0xFE0F) return true; // Variation selectors
+            if (code >= 0xFEFF) return true; // BOM and others
+            
+            return false;
+        }
+
+        function isInvisibleChar(char, code) {
+            // Zero-width characters
+            const invisibleCodes = [
+                0x200B, 0x200C, 0x200D, 0x200E, 0x200F,
+                0x2060, 0x2061, 0x2062, 0x2063, 0x2064,
+                0xFEFF
+            ];
+            return invisibleCodes.includes(code);
+        }
+
+        function isDirectionalChar(code) {
+            return (code >= 0x202A && code <= 0x202E) || 
+                   (code >= 0x2066 && code <= 0x2069);
+        }
+
+        function getCharacterInfo(char, code) {
+            const info = {
+                char: char,
+                code: code,
+                hex: '0x' + code.toString(16).toUpperCase(),
+                name: getCharacterName(code),
+                category: getCharacterCategory(code),
+                riskLevel: getCharacterRisk(code),
+                description: getCharacterDescription(code)
+            };
+            
+            return info;
+        }
+
+        function getCharacterName(code) {
+            const names = {
+                0x00A0: 'NO-BREAK SPACE',
+                0x2000: 'EN QUAD',
+                0x2001: 'EM QUAD',
+                0x2002: 'EN SPACE',
+                0x2003: 'EM SPACE',
+                0x2004: 'THREE-PER-EM SPACE',
+                0x2005: 'FOUR-PER-EM SPACE',
+                0x2006: 'SIX-PER-EM SPACE',
+                0x2007: 'FIGURE SPACE',
+                0x2008: 'PUNCTUATION SPACE',
+                0x2009: 'THIN SPACE',
+                0x200A: 'HAIR SPACE',
+                0x200B: 'ZERO WIDTH SPACE',
+                0x200C: 'ZERO WIDTH NON-JOINER',
+                0x200D: 'ZERO WIDTH JOINER',
+                0x200E: 'LEFT-TO-RIGHT MARK',
+                0x200F: 'RIGHT-TO-LEFT MARK',
+                0x2028: 'LINE SEPARATOR',
+                0x2029: 'PARAGRAPH SEPARATOR',
+                0x202A: 'LEFT-TO-RIGHT EMBEDDING',
+                0x202B: 'RIGHT-TO-LEFT EMBEDDING',
+                0x202C: 'POP DIRECTIONAL FORMATTING',
+                0x202D: 'LEFT-TO-RIGHT OVERRIDE',
+                0x202E: 'RIGHT-TO-LEFT OVERRIDE',
+                0x2060: 'WORD JOINER',
+                0x2061: 'FUNCTION APPLICATION',
+                0x2062: 'INVISIBLE TIMES',
+                0x2063: 'INVISIBLE SEPARATOR',
+                0x2064: 'INVISIBLE PLUS',
+                0x2066: 'LEFT-TO-RIGHT ISOLATE',
+                0x2067: 'RIGHT-TO-LEFT ISOLATE',
+                0x2068: 'FIRST STRONG ISOLATE',
+                0x2069: 'POP DIRECTIONAL ISOLATE',
+                0xFEFF: 'ZERO WIDTH NO-BREAK SPACE (BOM)'
+            };
+            
+            return names[code] || `U+${code.toString(16).toUpperCase().padStart(4, '0')}`;
+        }
+
+        function getCharacterCategory(code) {
+            if (isNonStandardWhitespace(String.fromCharCode(code), code)) return 'Non-Standard Whitespace';
+            if (isInvisibleChar(String.fromCharCode(code), code)) return 'Invisible Character';
+            if (isDirectionalChar(code)) return 'Directional Control';
+            if (code < 32) return 'Control Character';
+            return 'Special Unicode';
+        }
+
+        function getCharacterRisk(code) {
+            // Alto risco: caracteres que podem ser usados para injeção ou marca d'água
+            const highRisk = [0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064];
+            if (highRisk.includes(code)) return 'High';
+            
+            // Médio risco: espaços não-padrão e direcionais
+            if (isNonStandardWhitespace(String.fromCharCode(code), code) || isDirectionalChar(code)) return 'Medium';
+            
+            return 'Low';
+        }
+
+        function getCharacterDescription(code) {
+            const desc = translations[currentLanguage].descriptions[code] || translations[currentLanguage].descriptions.default;
+            return desc;
+        }
+
+        function calculateRiskLevel(suspiciousChars) {
+            let score = 0;
+            
+            suspiciousChars.forEach(char => {
+                switch(char.riskLevel) {
+                    case 'High': score += 3 * char.count; break;
+                    case 'Medium': score += 2 * char.count; break;
+                    case 'Low': score += 1 * char.count; break;
+                }
+            });
+            
+            if (score === 0) return 'Safe';
+            if (score <= 5) return 'Low';
+            if (score <= 15) return 'Medium';
+            return 'High';
+        }
+
+        function displayResults(analysis) {
+            const summary = document.getElementById('summary');
+            const container = document.getElementById('detailsContainer');
+            
+            // Resumo
+            const riskClass = analysis.riskLevel.toLowerCase();
+            const riskEmoji = {
+                'safe': '✅',
+                'low': '⚠️',
+                'medium': '🟡',
+                'high': '🚨'
+            };
+            
+            const translatedRiskLevel = t(riskClass);
+            
+            summary.innerHTML = `
+                <h2>${riskEmoji[riskClass]} ${t('riskLevel')}: ${translatedRiskLevel}</h2>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">${analysis.totalChars}</div>
+                        <div>${t('totalChars')}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${analysis.suspiciousChars.length}</div>
+                        <div>${t('suspiciousTypes')}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${analysis.totalSuspicious}</div>
+                        <div>${t('occurrences')}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Detalhes
+            container.innerHTML = '';
+            
+            if (analysis.suspiciousChars.length === 0) {
+                container.innerHTML = `<div class="safe"><strong>✅ ${t('cleanText')}</strong><br>${t('noSuspicious')}</div>`;
+                return;
+            }
+            
+            const detailsSection = document.createElement('div');
+            detailsSection.className = 'details-section';
+            detailsSection.innerHTML = `<h3>${t('suspiciousDetected')}</h3>`;
+            
+            analysis.suspiciousChars.forEach(char => {
+                const charDiv = document.createElement('div');
+                charDiv.className = 'char-item';
+                
+                const positionTags = char.positions.slice(0, 10).map(pos => 
+                    `<span class="position-tag">${pos}</span>`
+                ).join('');
+                
+                const morePositions = char.positions.length > 10 ? 
+                    `<span class="position-tag">+${char.positions.length - 10} ${t('more')}</span>` : '';
+                
+                const translatedCategory = translations[currentLanguage].categories[char.category] || char.category;
+                const translatedRisk = t(char.riskLevel.toLowerCase());
+                
+                charDiv.innerHTML = `
+                    <div class="char-display">${char.char === ' ' ? t('space') : char.char}</div>
+                    <div class="char-info">
+                        <div class="info-item">
+                            <span class="info-label">${t('name')}:</span> ${char.name}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">${t('code')}:</span> ${char.code} (${char.hex})
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">${t('category')}:</span> ${translatedCategory}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">${t('risk')}:</span> ${translatedRisk}
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">${t('count')}:</span> ${char.count}
+                        </div>
+                    </div>
+                    <div class="${char.riskLevel === 'High' ? 'danger' : (char.riskLevel === 'Medium' ? 'warning' : 'safe')}">
+                        <strong>${t('description')}:</strong> ${char.description}
+                    </div>
+                    <div class="positions">
+                        <strong>${t('positions')}:</strong> ${positionTags}${morePositions}
+                    </div>
+                `;
+                
+                detailsSection.appendChild(charDiv);
+            });
+            
+            container.appendChild(detailsSection);
+        }
+
+        // Initialize with English on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setLanguage('en');
+        });
+    </script>
+</body>
+</html>
