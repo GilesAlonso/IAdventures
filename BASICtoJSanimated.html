@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Animated BASIC Graphics</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        
+        .canvas-container {
+            position: relative;
+        }
+        
+        canvas {
+            border: 2px solid #333;
+            background: #000;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        canvas:hover {
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        .controls {
+            background: rgba(20, 20, 40, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+            font-size: 14px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #2a2a5a, #3a3a7a);
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            margin: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            width: calc(50% - 8px);
+        }
+        
+        button:hover {
+            background: linear-gradient(45deg, #3a3a7a, #4a4a9a);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        button.active {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+        }
+        
+        .slider-container {
+            margin: 10px 0;
+        }
+        
+        .slider-container label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00ffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .stats {
+            font-size: 11px;
+            color: #888;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        
+        .mode-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ffff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+            <div class="mode-indicator" id="modeIndicator">Static Mode</div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>Animation Modes</h3>
+                <button onclick="setMode('static')" id="staticBtn" class="active">Static</button>
+                <button onclick="setMode('flow')" id="flowBtn">Flow</button>
+                <button onclick="setMode('spiral')" id="spiralBtn">Spiral</button>
+                <button onclick="setMode('pulse')" id="pulseBtn">Pulse</button>
+                <button onclick="setMode('morph')" id="morphBtn">Morph</button>
+                <button onclick="setMode('rainbow')" id="rainbowBtn">Rainbow</button>
+            </div>
+            
+            <div class="control-group">
+                <h3>Pattern Controls</h3>
+                <div class="slider-container">
+                    <label>Speed: <span id="speedValue">1.0</span></label>
+                    <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1">
+                </div>
+                <div class="slider-container">
+                    <label>Complexity: <span id="complexityValue">250</span></label>
+                    <input type="range" id="complexitySlider" min="50" max="500" step="50" value="250">
+                </div>
+                <div class="slider-container">
+                    <label>Scale: <span id="scaleValue">108</span></label>
+                    <input type="range" id="scaleSlider" min="20" max="200" step="10" value="108">
+                </div>
+                <div class="slider-container">
+                    <label>Color Intensity: <span id="colorValue">1.0</span></label>
+                    <input type="range" id="colorSlider" min="0.1" max="2" step="0.1" value="1">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Actions</h3>
+                <button onclick="regenerate()">New Pattern</button>
+                <button onclick="togglePause()">Pause/Play</button>
+                <button onclick="clearCanvas()">Clear</button>
+                <button onclick="saveImage()">Save PNG</button>
+            </div>
+            
+            <div class="stats" id="stats">
+                FPS: 0<br>
+                Iterations: 0<br>
+                Mode: Static
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Animation state
+        let animationId;
+        let currentMode = 'static';
+        let isPaused = false;
+        let frameCount = 0;
+        let lastTime = 0;
+        let fps = 0;
+        
+        // Pattern parameters
+        let params = {
+            speed: 1.0,
+            complexity: 250,
+            scale: 108,
+            colorIntensity: 1.0,
+            time: 0,
+            phase: 0
+        };
+        
+        // Original BASIC variables
+        let pi = 4 * Math.atan(1);
+        let r = 2 * pi / 235;
+        let t = 4 * Math.random();
+        let x = 0, u = 0, v = 0;
+        
+        // Initialize sliders
+        function initControls() {
+            document.getElementById('speedSlider').oninput = (e) => {
+                params.speed = parseFloat(e.target.value);
+                document.getElementById('speedValue').textContent = params.speed.toFixed(1);
+            };
+            
+            document.getElementById('complexitySlider').oninput = (e) => {
+                params.complexity = parseInt(e.target.value);
+                document.getElementById('complexityValue').textContent = params.complexity;
+            };
+            
+            document.getElementById('scaleSlider').oninput = (e) => {
+                params.scale = parseInt(e.target.value);
+                document.getElementById('scaleValue').textContent = params.scale;
+            };
+            
+            document.getElementById('colorSlider').oninput = (e) => {
+                params.colorIntensity = parseFloat(e.target.value);
+                document.getElementById('colorValue').textContent = params.colorIntensity.toFixed(1);
+            };
+        }
+        
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(mode + 'Btn').classList.add('active');
+            document.getElementById('modeIndicator').textContent = mode.charAt(0).toUpperCase() + mode.slice(1) + ' Mode';
+            
+            if (mode !== 'static') {
+                startAnimation();
+            } else {
+                stopAnimation();
+                generateStaticPattern();
+            }
+        }
+        
+        function clearCanvas() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function generateStaticPattern() {
+            clearCanvas();
+            t = 4 * Math.random();
+            x = 0;
+            
+            for (let i = 0; i < params.complexity; i++) {
+                for (let j = 0; j < params.complexity; j++) {
+                    u = Math.sin(i + v) + Math.sin(r * i + x);
+                    v = Math.cos(i + v) + Math.cos(r * i + x);
+                    x = u + t;
+                    
+                    let px = Math.floor(canvas.width/2 + params.scale * u);
+                    let py = Math.floor(canvas.height/2 + params.scale * v);
+                    
+                    if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+                        let rr = Math.floor((i * 3 * params.colorIntensity) % 256);
+                        let gg = Math.floor((j * 3 * params.colorIntensity) % 256);
+                        let bb = Math.floor((255 - (i + j) / 2 * params.colorIntensity) % 256);
+                        
+                        ctx.fillStyle = `rgb(${rr}, ${gg}, ${bb})`;
+                        ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+        }
+        
+        function animatePattern(timestamp) {
+            if (isPaused) return;
+            
+            // Calculate FPS
+            if (timestamp - lastTime >= 1000) {
+                fps = Math.round(frameCount * 1000 / (timestamp - lastTime));
+                frameCount = 0;
+                lastTime = timestamp;
+                updateStats();
+            }
+            frameCount++;
+            
+            params.time += 0.02 * params.speed;
+            
+            // Clear with slight fade for trail effect
+            if (currentMode === 'flow' || currentMode === 'morph') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                clearCanvas();
+            }
+            
+            let iterations = Math.floor(params.complexity / 5); // Reduce for smooth animation
+            
+            for (let i = 0; i < iterations; i++) {
+                for (let j = 0; j < iterations; j++) {
+                    let animatedI = i;
+                    let animatedJ = j;
+                    let timeOffset = 0;
+                    
+                    // Apply mode-specific transformations
+                    switch (currentMode) {
+                        case 'flow':
+                            timeOffset = params.time;
+                            break;
+                        case 'spiral':
+                            timeOffset = Math.atan2(j - iterations/2, i - iterations/2) + params.time;
+                            break;
+                        case 'pulse':
+                            timeOffset = Math.sin(params.time * 2) * Math.sqrt((i - iterations/2)**2 + (j - iterations/2)**2) * 0.1;
+                            break;
+                        case 'morph':
+                            animatedI = i + Math.sin(params.time + j * 0.1) * 10;
+                            animatedJ = j + Math.cos(params.time + i * 0.1) * 10;
+                            break;
+                        case 'rainbow':
+                            timeOffset = params.time * 2;
+                            break;
+                    }
+                    
+                    u = Math.sin(animatedI + v + timeOffset) + Math.sin(r * animatedI + x);
+                    v = Math.cos(animatedI + v + timeOffset) + Math.cos(r * animatedI + x);
+                    x = u + t + timeOffset * 0.1;
+                    
+                    let px = Math.floor(canvas.width/2 + params.scale * u);
+                    let py = Math.floor(canvas.height/2 + params.scale * v);
+                    
+                    if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+                        let rr, gg, bb;
+                        
+                        if (currentMode === 'rainbow') {
+                            // HSV to RGB for rainbow effect
+                            let hue = (animatedI + animatedJ + params.time * 50) % 360;
+                            let hsv = hsvToRgb(hue, 1, 1);
+                            rr = hsv.r * params.colorIntensity;
+                            gg = hsv.g * params.colorIntensity;
+                            bb = hsv.b * params.colorIntensity;
+                        } else {
+                            rr = Math.floor((animatedI * 3 * params.colorIntensity + timeOffset * 50) % 256);
+                            gg = Math.floor((animatedJ * 3 * params.colorIntensity + timeOffset * 30) % 256);
+                            bb = Math.floor((255 - (animatedI + animatedJ) / 2 * params.colorIntensity + timeOffset * 70) % 256);
+                        }
+                        
+                        // Add glow effect
+                        if (currentMode === 'pulse' || currentMode === 'spiral') {
+                            ctx.shadowColor = `rgb(${rr}, ${gg}, ${bb})`;
+                            ctx.shadowBlur = 3;
+                        }
+                        
+                        ctx.fillStyle = `rgb(${Math.floor(rr)}, ${Math.floor(gg)}, ${Math.floor(bb)})`;
+                        ctx.fillRect(px, py, 2, 2);
+                        
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            }
+            
+            animationId = requestAnimationFrame(animatePattern);
+        }
+        
+        function hsvToRgb(h, s, v) {
+            h /= 60;
+            let c = v * s;
+            let x = c * (1 - Math.abs((h % 2) - 1));
+            let m = v - c;
+            let r, g, b;
+            
+            if (h < 1) [r, g, b] = [c, x, 0];
+            else if (h < 2) [r, g, b] = [x, c, 0];
+            else if (h < 3) [r, g, b] = [0, c, x];
+            else if (h < 4) [r, g, b] = [0, x, c];
+            else if (h < 5) [r, g, b] = [x, 0, c];
+            else [r, g, b] = [c, 0, x];
+            
+            return {
+                r: Math.floor((r + m) * 255),
+                g: Math.floor((g + m) * 255),
+                b: Math.floor((b + m) * 255)
+            };
+        }
+        
+        function startAnimation() {
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animatePattern);
+        }
+        
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            if (!isPaused && currentMode !== 'static') {
+                startAnimation();
+            }
+        }
+        
+        function regenerate() {
+            t = 4 * Math.random();
+            params.phase = Math.random() * 2 * Math.PI;
+            if (currentMode === 'static') {
+                generateStaticPattern();
+            }
+        }
+        
+        function saveImage() {
+            const link = document.createElement('a');
+            link.download = `animated-basic-graphics-${currentMode}-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        function updateStats() {
+            document.getElementById('stats').innerHTML = `
+                FPS: ${fps}<br>
+                Iterations: ${Math.floor(params.complexity / 5)}<br>
+                Mode: ${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}
+            `;
+        }
+        
+        // Initialize
+        initControls();
+        generateStaticPattern();
+        
+        // Canvas click to regenerate
+        canvas.addEventListener('click', regenerate);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case ' ': togglePause(); e.preventDefault(); break;
+                case 'r': regenerate(); break;
+                case 'c': clearCanvas(); break;
+                case '1': setMode('static'); break;
+                case '2': setMode('flow'); break;
+                case '3': setMode('spiral'); break;
+                case '4': setMode('pulse'); break;
+                case '5': setMode('morph'); break;
+                case '6': setMode('rainbow'); break;
+            }
+        });
+    </script>
+</body>
+</html>
