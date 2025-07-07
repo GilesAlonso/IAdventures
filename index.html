@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pet Projects - Giles Alonso</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="icon" href="favicon.ico" type="image/x-icon"> 
+    
+    <style>
+        /* CSS Variables for easy color/font management */
+        :root {
+            --primary-green: #2ecc71; /* A shade of green similar to your SolveThis site */
+            --dark-green: #27ae60;
+            --accent-orange: #ff9800; /* For action buttons */
+            --accent-blue: #3498db; /* For project view buttons */
+            --text-color: #333;
+            --light-text-color: #555;
+            --white: #fff;
+            --light-gray: #f4f4f4;
+            --dark-gray: #333; /* For footer background */
+            --border-color: #ddd;
+            
+            /* Font Families */
+            --font-heading: 'Montserrat', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--white);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            color: var(--text-color);
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--primary-green);
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--dark-green);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        /* Header Styles (Mimicking SolveThis) */
+        .header {
+            background-color: var(--white);
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+
+        .logo {
+            flex-shrink: 0;
+            margin-right: 20px;
+        }
+
+        .logo a {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary-green);
+            text-decoration: none;
+        }
+
+        .nav {
+            flex-grow: 1; /* Allow nav to take available space */
+            display: flex;
+            justify-content: flex-end; /* Align nav items to the right */
+        }
+
+        .nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap; /* Allow nav items to wrap */
+            align-items: center;
+        }
+
+        .nav ul li {
+            margin-left: 30px;
+            margin-bottom: 5px; /* For wrapped items */
+            margin-top: 5px; /* For wrapped items */
+        }
+
+        .nav ul li:first-child {
+             /* Remove left margin for first item on mobile to avoid excess space */
+             margin-left: 0; 
+        }
+
+        .nav ul li a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 5px 0; /* Add padding for clickable area */
+            transition: color 0.3s ease;
+        }
+
+        .nav ul li a:hover,
+        .nav ul li a.active {
+            color: var(--primary-green);
+        }
+
+        .nav .btn-contact {
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            margin-left: 30px; /* Consistent spacing */
+        }
+
+        .nav .btn-contact:hover {
+            background-color: var(--dark-green);
+        }
+
+        /* Hero Section - AI Projects Intro */
+        .hero-section {
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 80px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px; /* Ensure a minimum height */
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            padding: 0 20px; /* Ensure content is not flush with edges */
+        }
+
+        .hero-section h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            font-family: var(--font-heading);
+            line-height: 1.1;
+            color: var(--white); /* Ensure heading is white */
+        }
+
+        .hero-section p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .hero-section .btn {
+            background-color: var(--accent-orange);
+            color: var(--white);
+            padding: 12px 25px;
+            font-weight: 600;
+        }
+
+        .hero-section .btn:hover {
+            background-color: #e68a00; /* Darker orange */
+            transform: translateY(-2px);
+        }
+
+        /* Placeholder for background graphic (e.g., globe from your site) */
+        .hero-background-graphic {
+            position: absolute;
+            top: 50%;
+            right: 50px;
+            transform: translateY(-50%);
+            width: 400px;
+            height: 400px;
+            background-image: url('images/placeholder-globe.png'); /* Path relative to this index.html */
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.15; /* Slightly faded */
+            z-index: 1;
+            /* Optional: Simple animation */
+            animation: rotateGlobe 60s linear infinite;
+        }
+
+        @keyframes rotateGlobe {
+            from { transform: translateY(-50%) rotate(0deg); }
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        /* Projects Section */
+        .projects-section {
+            padding: 60px 0;
+            background-color: var(--light-gray);
+        }
+
+        .projects-section h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            color: var(--primary-green);
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card {
+            background-color: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+        }
+
+        .project-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .project-card-content {
+            padding: 20px;
+            flex-grow: 1; /* Allows content to take up remaining space */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card-content h3 {
+            font-size: 1.5em;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--primary-green);
+        }
+
+        .project-card-content p {
+            font-size: 0.95em;
+            color: var(--light-text-color);
+            margin-bottom: 15px;
+            flex-grow: 1; /* Pushes button to bottom */
+        }
+
+        .project-card-content .btn-view-project {
+            align-self: flex-start; /* Aligns button to the left */
+            background-color: var(--accent-blue);
+            color: var(--white);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .project-card-content .btn-view-project:hover {
+            background-color: #2980b9; /* Darker blue */
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--dark-gray);
+            color: var(--white);
+            padding: 40px 0;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .footer p {
+            margin: 0;
+        }
+
+        .footer a {
+            color: var(--primary-green);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--white);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .nav ul li {
+                margin-left: 20px;
+            }
+            .hero-section h1 {
+                font-size: 3em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .logo {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+
+            .nav {
+                justify-content: center;
+                width: 100%; /* Take full width */
+            }
+
+            .nav ul {
+                flex-direction: row; /* Keep as row, but allow wrap */
+                justify-content: center;
+                width: 100%;
+            }
+
+            .nav ul li {
+                margin: 5px 10px; /* Adjust spacing for wrapped items */
+            }
+
+            .nav .btn-contact {
+                margin-top: 15px;
+                margin-left: 0; /* Center button */
+            }
+
+            .hero-section {
+                padding: 60px 0;
+                min-height: 350px;
+            }
+            .hero-section h1 {
+                font-size: 2.5em;
+            }
+            .hero-section p {
+                font-size: 1.1em;
+            }
+            .hero-background-graphic {
+                width: 300px;
+                height: 300px;
+                right: 20px; /* Adjust position */
+                opacity: 0.1;
+            }
+            .projects-section h2 {
+                font-size: 2em;
+            }
+            .project-grid {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav ul {
+                flex-direction: column; /* Stack nav items */
+                align-items: center;
+            }
+            .nav ul li {
+                margin: 8px 0;
+            }
+            .hero-section h1 {
+                font-size: 2em;
+            }
+            .hero-section p {
+                font-size: 0.95em;
+            }
+            .hero-background-graphic {
+                display: none; /* Hide on very small screens to avoid clutter */
+            }
+            .project-grid {
+                grid-template-columns: 1fr; /* Single column on very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <div class="logo">
+                <a href="https://gilesalonso.github.io/index.html#home">SolveThis</a> 
+            </div>
+            <nav class="nav">
+                <ul>
+                    <li><a href="https://gilesalonso.github.io/index.html#home">Home</a></li>
+                    <li><a href="https://gilesalonso.github.io/index.html#services">Services</a></li>
+                    <li><a href="https://gilesalonso.github.io/blog.html">Blog</a></li>
+                    <li><a href="https://gilesalonso.github.io/index.html#portfolio">Portfolio</a></li>
+                    <li><a href="https://gilesalonso.github.io/index.html#about">About</a></li>
+                    <li><a href="index.html" class="active">AI Projects</a></li> <li><a href="https://gilesalonso.github.io/index.html#contact" class="btn-contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <div class="container hero-content">
+                <h1>Dive into My AI-Powered Creations</h1>
+                <p>Exploring the exciting world of Artificial Intelligence through practical, hands-on projects. From automated tasks to smart tools, discover how AI can solve real-world problems.</p>
+                <a href="#projects" class="btn">Explore Projects</a>
+            </div>
+            <div class="hero-background-graphic"></div>
+        </section>
+
+        <section id="projects" class="projects-section">
+            <div class="container">
+                <h2>My AI Pet Projects</h2>
+                <div class="project-grid">
+                    <div class="project-card">
+                        <img src="images/project1-thumbnail.jpg" alt="AI Project 1 Thumbnail - Content Summarizer">
+                        <div class="project-card-content">
+                            <h3>Automated Content Summarizer</h3>
+                            <p>A Python-based tool using NLP to quickly summarize long articles and documents. Great for research and quick information extraction.</p>
+                            <a href="project1-summarizer.html" class="btn-view-project">View Project</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="images/project2-thumbnail.jpg" alt="AI Project 2 Thumbnail - Image Classifier">
+                        <div class="project-card-content">
+                            <h3>Image Classifier for Wildlife</h3>
+                            <p>Trained a Convolutional Neural Network (CNN) to identify different animal species from images, with high accuracy.</p>
+                            <a href="project2-image-classifier.html" class="btn-view-project">View Project</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="images/project3-thumbnail.jpg" alt="AI Project 3 Thumbnail - Sentiment Analyzer">
+                        <div class="project-card-content">
+                            <h3>Sentiment Analysis Tool for Reviews</h3>
+                            <p>Analyzes customer reviews to determine sentiment (positive, negative, neutral), helping businesses understand feedback quickly.</p>
+                            <a href="project3-sentiment-analyzer.html" class="btn-view-project">View Project</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="images/project4-thumbnail.jpg" alt="AI Project 4 Thumbnail - Basic Chatbot">
+                        <div class="project-card-content">
+                            <h3>Basic Chatbot for FAQs</h3>
+                            <p>A simple rule-based chatbot designed to answer common questions for a fictional customer support scenario.</p>
+                            <a href="project4-chatbot.html" class="btn-view-project">View Project</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="images/project5-thumbnail.jpg" alt="AI Project 5 Thumbnail - Handwritten Digit Recognizer">
+                        <div class="project-card-content">
+                            <h3>Handwritten Digit Recognizer</h3>
+                            <p>Implemented a neural network to recognize handwritten digits (0-9) using the MNIST dataset.</p>
+                            <a href="project5-digit-recognizer.html" class="btn-view-project">View Project</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="images/project6-thumbnail.jpg" alt="AI Project 6 Thumbnail - Automated Email Responder">
+                        <div class="project-card-content">
+                            <h3>Automated Email Responder (Prototype)</h3>
+                            <p>A basic prototype using pattern matching to suggest quick replies to incoming emails.</p>
+                            <a href="project6-email-responder.html" class="btn-view-project">View Project</a>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Giles Alonso. All rights reserved.</p>
+            <p>Built with passion and AI assistance.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set the current year in the footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
