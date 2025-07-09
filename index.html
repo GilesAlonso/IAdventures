@@ -144,7 +144,7 @@
 
         /* Hero Section */
         .hero-section {
-            background-color: var(--primary-green);
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
             color: var(--white);
             padding: 80px 0;
             text-align: center;
@@ -170,22 +170,28 @@
             font-family: var(--font-heading);
             line-height: 1.1;
             color: var(--white);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .hero-section p {
             font-size: 1.2em;
             margin-bottom: 30px;
-            opacity: 0.9;
+            opacity: 0.95;
         }
 
         .hero-section .btn {
             background-color: var(--accent-orange);
             color: var(--white);
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .hero-section .btn:hover {
             background-color: #e68a00;
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
 
         .hero-background-graphic {
@@ -195,88 +201,114 @@
             transform: translateY(-50%);
             width: 400px;
             height: 400px;
-            background-image: url('images/placeholder-globe.png');
-            background-size: contain;
-            background-repeat: no-repeat;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
             opacity: 0.15;
             z-index: 1;
-            animation: rotateGlobe 60s linear infinite;
+            animation: pulse 4s ease-in-out infinite;
         }
 
-        @keyframes rotateGlobe {
-            from { transform: translateY(-50%) rotate(0deg); }
-            to { transform: translateY(-50%) rotate(360deg); }
+        @keyframes pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.1); }
         }
 
         /* Projects Section */
         .projects-section {
-            padding: 60px 0;
+            padding: 80px 0;
             background-color: var(--light-gray);
         }
 
         .projects-section h2 {
             text-align: center;
             font-size: 2.5em;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             color: var(--primary-green);
+        }
+
+        .projects-subtitle {
+            text-align: center;
+            font-size: 1.1em;
+            color: var(--light-text-color);
+            margin-bottom: 50px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .project-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 30px;
         }
 
         .project-card {
             background-color: var(--white);
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
         }
 
         .project-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(46, 204, 113, 0.15);
+            border-color: var(--primary-green);
         }
 
         .project-card img {
             width: 100%;
             height: 200px;
             object-fit: cover;
-            border-bottom: 1px solid var(--border-color);
+            transition: transform 0.3s ease;
+        }
+
+        .project-card:hover img {
+            transform: scale(1.05);
         }
 
         .project-card-content {
-            padding: 20px;
+            padding: 25px;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
         }
 
         .project-card-content h3 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
+            font-size: 1.4em;
+            margin-bottom: 12px;
             color: var(--primary-green);
+            font-weight: 700;
         }
 
         .project-card-content p {
             font-size: 0.95em;
             color: var(--light-text-color);
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             flex-grow: 1;
+            line-height: 1.6;
         }
 
         .project-card-content .btn-view-project {
             align-self: flex-start;
-            background-color: var(--accent-blue);
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
             color: var(--white);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(46, 204, 113, 0.3);
+            border: none;
         }
 
         .project-card-content .btn-view-project:hover {
-            background-color: #2980b9;
+            background: linear-gradient(135deg, var(--dark-green) 0%, #229954 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
         }
 
         /* Footer */
@@ -287,13 +319,23 @@
             text-align: center;
         }
 
-        .footer p { margin: 0; }
-        .footer a { color: var(--primary-green); }
-        .footer a:hover { color: var(--white); }
+        .footer p { 
+            margin: 0; 
+            margin-bottom: 5px;
+        }
+        
+        .footer a { 
+            color: var(--primary-green); 
+        }
+        
+        .footer a:hover { 
+            color: var(--white); 
+        }
 
         /* Responsive adjustments */
         @media (max-width: 992px) {
             .hero-section h1 { font-size: 3em; }
+            .project-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
         }
 
         @media (max-width: 768px) {
@@ -346,6 +388,7 @@
             .hero-section h1 { font-size: 2.5em; }
             .hero-section p { font-size: 1.1em; }
             .hero-background-graphic { width: 300px; height: 300px; right: 20px; opacity: 0.1; }
+            .projects-section { padding: 60px 0; }
             .projects-section h2 { font-size: 2em; }
             .project-grid { gap: 20px; }
         }
@@ -363,6 +406,7 @@
             }
             .project-grid {
                 grid-template-columns: 1fr;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             }
         }
     </style>
@@ -412,12 +456,13 @@
         <section id="projects" class="projects-section">
             <div class="container">
                 <h2>My AI Pet Projects</h2>
+                <p class="projects-subtitle">Each project represents a unique exploration into AI capabilities, showcasing practical applications and innovative solutions.</p>
                 <div class="project-grid">
                     <div class="project-card">
                         <img src="images/project1-LeitorEbook.png" alt="AI Project 1 Thumbnail - TXT em AudioLivro">
                         <div class="project-card-content">
                             <h3>Leitor de Audiobook</h3>
-                            <p>Carregue e escute seus arquivos .txt</p>
+                            <p>Carregue e escute seus arquivos .txt com tecnologia de síntese de voz avançada. Uma ferramenta perfeita para converter textos em experiências auditivas envolventes.</p>
                             <a href="Audiobook2.html" class="btn-view-project">View Project</a>
                         </div>
                     </div>
@@ -426,7 +471,7 @@
                         <img src="images/project2-detectorUnicode.png" alt="AI Project 2 Thumbnail - Image Classifier">
                         <div class="project-card-content">
                             <h3>Unicode Detector</h3>
-                            <p>Analyze text for special characters, code injection and watermarks.</p>
+                            <p>Analyze text for special characters, code injection and watermarks. A powerful security tool for detecting hidden content and potential threats in text data.</p>
                             <a href="detectorUnicode.html" class="btn-view-project">View Project</a>
                         </div>
                     </div>
@@ -434,8 +479,8 @@
                     <div class="project-card">
                         <img src="images/project3-BASICtoJSAnimated.png" alt="AI Project 3 Thumbnail - Sentiment Analyzer">
                         <div class="project-card-content">
-                            <h3>BASIC code into JavaScript Animation</h3>
-                            <p>A beautiful mathematical visualization using sine and cosine functions to generate swirling, organic patterns.</p>
+                            <h3>BASIC to JavaScript Animation</h3>
+                            <p>A beautiful mathematical visualization using sine and cosine functions to generate swirling, organic patterns. Experience the art of code transformation and mathematical beauty.</p>
                             <a href="BASICtoJSanimated.html" class="btn-view-project">View Project</a>
                         </div>
                     </div>
@@ -443,8 +488,8 @@
                     <div class="project-card">
                         <img src="images/project4-HistoriasParaDormir.png" alt="AI Project 4 Thumbnail - Basic Chatbot">
                         <div class="project-card-content">
-                            <h3>Histórias infantis de ninar</h3>
-                            <p>Um gerador de histórias infantis para ler na hora de dormir, permitindo seleção de alguns ajustes.</p>
+                            <h3>Histórias Infantis de Ninar</h3>
+                            <p>Um gerador de histórias infantis para ler na hora de dormir, permitindo seleção de alguns ajustes. Crie contos personalizados e mágicos para os pequenos sonhadores.</p>
                             <a href="https://claude.ai/public/artifacts/c8b56d1e-53a2-4eb1-978b-2edbe067552e" class="btn-view-project">View Project</a>
                         </div>
                     </div>
@@ -453,7 +498,7 @@
                         <img src="images/project5-CodeInjector.png" alt="AI Project 5 Thumbnail - Handwritten Digit Recognizer">
                         <div class="project-card-content">
                             <h3>Unicode Injector</h3>
-                            <p>Injects invisible characters into emojis, great for passing invisible messages to your AI companion</p>
+                            <p>Injects invisible characters into emojis, great for passing invisible messages to your AI companion. A fascinating exploration of hidden communication methods.</p>
                             <a href="project5-digit-recognizer.html" class="btn-view-project">View Project</a>
                         </div>
                     </div>
@@ -461,8 +506,8 @@
                     <div class="project-card">
                         <img src="images/project6-thumbnail.jpg" alt="AI Project 6 Thumbnail - Automated Email Responder">
                         <div class="project-card-content">
-                            <h3>Automated Email Responder (Prototype)</h3>
-                            <p>A basic prototype using pattern matching to suggest quick replies to incoming emails.</p>
+                            <h3>Automated Email Responder</h3>
+                            <p>A smart prototype using pattern matching to suggest quick replies to incoming emails. Streamline your communication with intelligent automation and time-saving responses.</p>
                             <a href="project6-email-responder.html" class="btn-view-project">View Project</a>
                         </div>
                     </div>
