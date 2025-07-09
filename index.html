@@ -86,6 +86,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
         }
 
         .logo a {
@@ -132,14 +133,15 @@
             background-color: var(--dark-green);
         }
         
-        /* --- New styles for hamburger menu --- */
+        /* Hamburger menu styles */
         .hamburger-menu {
             display: none;
             background: none;
             border: none;
             cursor: pointer;
-            padding: 0.25rem;
+            padding: 0.5rem;
             color: var(--text-color);
+            z-index: 1001;
         }
 
         /* Hero Section */
@@ -384,51 +386,50 @@
         }
 
         @media (max-width: 768px) {
-            /* --- MODIFICATION: Updated responsive header --- */
-            .nav { display: none; } /* Hide original nav container */
-            
+            /* Show hamburger menu on mobile */
             .hamburger-menu {
-                display: block; /* Show hamburger button */
+                display: block;
             }
             
-            #nav-menu {
-                display: none; /* Hide nav links by default */
+            /* Hide desktop nav on mobile */
+            .nav ul {
+                display: none;
                 position: absolute;
-                top: 100%; /* Position below header */
+                top: 100%;
                 left: 0;
                 width: 100%;
                 background-color: var(--white);
                 flex-direction: column;
                 align-items: center;
-                gap: 0;
                 padding: 1rem 0;
                 box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+                border-top: 1px solid var(--border-color);
             }
             
-            #nav-menu li {
-                width: 100%;
-                margin-left: 0;
+            /* Show nav when menu is open */
+            .header.mobile-menu-open .nav ul {
+                display: flex;
             }
             
-            #nav-menu li a {
-                display: block;
+            .nav ul li {
+                margin: 0;
                 width: 100%;
                 text-align: center;
+            }
+            
+            .nav ul li a {
+                display: block;
                 padding: 0.75rem 1rem;
+                width: 100%;
             }
 
-            #nav-menu li a.btn-contact {
+            .nav ul li a.btn-contact {
                 margin: 0.5rem auto;
                 display: inline-block;
                 width: auto;
             }
-            
-            /* Show the menu when the header has the .mobile-menu-open class */
-            .header.mobile-menu-open #nav-menu {
-                display: flex;
-            }
 
-            /* --- Other responsive adjustments --- */
+            /* Other responsive adjustments */
             .hero-section { padding: 60px 0; min-height: 350px; }
             .hero-section h1 { font-size: 2.5em; }
             .hero-section p { font-size: 1.1em; }
@@ -439,7 +440,6 @@
         }
 
         @media (max-width: 480px) {
-            /* --- MODIFICATION: Simplified this block as hamburger menu handles nav --- */
             .hero-section h1 {
                 font-size: 2em;
             }
@@ -457,14 +457,12 @@
     </style>
 </head>
 <body>
-    <!-- MODIFICATION: Added id="header" to the header tag -->
     <header class="header" id="header">
         <div class="container header-content">
             <div class="logo">
                 <a href="https://gilesalonso.github.io/index.html#home">SolveThis</a> 
             </div>
             
-            <!-- MODIFICATION: Nav menu now has an ID -->
             <nav class="nav">
                 <ul id="nav-menu">
                     <li><a href="https://gilesalonso.github.io/index.html#home">Home</a></li>
@@ -477,7 +475,6 @@
                 </ul>
             </nav>
 
-            <!-- MODIFICATION: Added hamburger button -->
             <button id="hamburger-btn" class="hamburger-menu">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -572,29 +569,35 @@
     <script>
         // Set the current year in the footer
         document.getElementById('currentYear').textContent = new Date().getFullYear();
-    </script>
-
-    <!-- MODIFICATION: Added script for hamburger menu -->
-    <script>
+        
+        // Hamburger menu functionality
         document.addEventListener('DOMContentLoaded', function() {
             const header = document.getElementById('header');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const navMenu = document.getElementById('nav-menu');
 
-            if (hamburgerBtn && navMenu && header) {
+            if (hamburgerBtn && header) {
                 // Toggle menu on hamburger click
-                hamburgerBtn.addEventListener('click', () => {
+                hamburgerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     header.classList.toggle('mobile-menu-open');
                 });
 
-                // Close menu when a link is clicked
-                navMenu.querySelectorAll('a').forEach(link => {
-                    link.addEventListener('click', () => {
-                        if (header.classList.contains('mobile-menu-open')) {
-                            header.classList.remove('mobile-menu-open');
-                        }
-                    });
+                // Close menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!header.contains(e.target) && header.classList.contains('mobile-menu-open')) {
+                        header.classList.remove('mobile-menu-open');
+                    }
                 });
+
+                // Close menu when a link is clicked
+                if (navMenu) {
+                    navMenu.querySelectorAll('a').forEach(link => {
+                        link.addEventListener('click', function() {
+                            header.classList.remove('mobile-menu-open');
+                        });
+                    });
+                }
             }
         });
     </script>
