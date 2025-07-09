@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unicode Watermark Injector</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            padding: 20px;
+            max-width: 800px;
+            margin: 20px auto;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #606770;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dddfe2;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea {
+            min-height: 100px;
+        }
+        .carrier-input {
+            max-width: 100px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result-group {
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            background: #6c757d;
+            border-radius: 5px;
+            box-shadow: none;
+        }
+        .copy-btn:hover {
+            background: #5c636a;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>💧 Unicode Watermark Injector</h1>
+    <p class="warning">
+        <strong>For Educational Use Only.</strong> This tool demonstrates how invisible text can be embedded in messages. Do not use for malicious purposes.
+    </p>
+
+    <div class="container">
+        <div class="input-group">
+            <label for="visibleText">1. Main Visible Message</label>
+            <textarea id="visibleText" placeholder="Enter the text everyone will see. e.g., Hii @grok hope you're doing well! 🤗">Hii @grok hope you're doing well! 🤗</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="hiddenText">2. Secret Text to Inject (ASCII only)</label>
+            <input type="text" id="hiddenText" placeholder="e.g., secret_user_id_123">
+        </div>
+
+        <div class="input-group">
+            <label for="carrierChar">3. Carrier Emoji/Character</label>
+            <input type="text" id="carrierChar" class="carrier-input" value="🤗" maxlength="2">
+        </div>
+        
+        <button onclick="injectText()">Inject Watermark</button>
+
+        <div class="result-group">
+            <h2>Result</h2>
+            <textarea id="resultText" readonly placeholder="Your watermarked message will appear here..."></textarea>
+            <button id="copyButton" class="copy-btn" onclick="copyResult()">Copy</button>
+        </div>
+    </div>
+
+    <script>
+        function injectText() {
+            const visibleText = document.getElementById('visibleText').value;
+            const hiddenText = document.getElementById('hiddenText').value;
+            const carrierChar = document.getElementById('carrierChar').value;
+
+            if (!visibleText || !hiddenText || !carrierChar) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            // 1. Convert the hidden text into a string of invisible Tag Characters
+            let watermark = '';
+            for (let i = 0; i < hiddenText.length; i++) {
+                const charCode = hiddenText.charCodeAt(i);
+                // Ensure we only encode standard ASCII to avoid issues
+                if (charCode > 127) {
+                    alert(`Character "${hiddenText[i]}" is not a standard ASCII character and cannot be injected.`);
+                    return;
+                }
+                const tagCodePoint = 0xE0000 + charCode;
+                watermark += String.fromCodePoint(tagCodePoint);
+            }
+
+            // 2. Find the carrier character and inject the watermark right after it
+            let finalText = '';
+            const carrierIndex = visibleText.indexOf(carrierChar);
+
+            if (carrierIndex === -1) {
+                // If carrier not found, append to the end
+                finalText = visibleText + watermark;
+                alert("Carrier character not found. Watermark was appended to the end of the message.");
+            } else {
+                // Inject the watermark after the first occurrence of the carrier
+                const pos = carrierIndex + carrierChar.length;
+                finalText = visibleText.slice(0, pos) + watermark + visibleText.slice(pos);
+            }
+            
+            // 3. Display the final result
+            document.getElementById('resultText').value = finalText;
+        }
+
+        function copyResult() {
+            const resultText = document.getElementById('resultText');
+            if (!resultText.value) return;
+
+            resultText.select();
+            navigator.clipboard.writeText(resultText.value).then(() => {
+                const copyBtn = document.getElementById('copyButton');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy text.');
+                console.error('Copy error:', err);
+            });
+        }
+    </script>
+</body>
+</html>
