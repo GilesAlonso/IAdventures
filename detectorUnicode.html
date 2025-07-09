@@ -222,6 +222,7 @@
             background: #f8f9fa;
             border-radius: 5px;
             border: 1px solid #e0e0e0;
+            word-break: break-all;
         }
 
         .char-info {
@@ -349,6 +350,8 @@
                     'Invisible Character': 'Invisible Character',
                     'Directional Control': 'Directional Control',
                     'Control Character': 'Control Character',
+                    'Tag Character': 'Tag Character',
+                    'Private Use Area': 'Private Use Area (PUA)',
                     'Special Unicode': 'Special Unicode'
                 },
                 descriptions: {
@@ -364,6 +367,8 @@
                     0x202D: 'Forces left-to-right override',
                     0x202E: 'Forces right-to-left override',
                     0xFEFF: 'Byte order mark, may indicate special encoding',
+                    tagChar: 'A deprecated character, often invisible, used to encode hidden data. Can be used to watermark text.',
+                    puaChar: 'A character from a Private Use Area. Has no standard meaning and is often used for custom icons or watermarking.',
                     default: 'Unicode character with potential use in watermarking or injection'
                 }
             },
@@ -399,6 +404,8 @@
                     'Invisible Character': 'Caractere Invisível',
                     'Directional Control': 'Controle Direcional',
                     'Control Character': 'Caractere de Controle',
+                    'Tag Character': 'Caractere de Tag',
+                    'Private Use Area': 'Área de Uso Privado (PUA)',
                     'Special Unicode': 'Unicode Especial'
                 },
                 descriptions: {
@@ -414,6 +421,8 @@
                     0x202D: 'Força sobreposição esquerda-direita',
                     0x202E: 'Força sobreposição direita-esquerda',
                     0xFEFF: 'Marca de ordem de bytes, pode indicar encoding especial',
+                    tagChar: 'Um caractere obsoleto, geralmente invisível, usado para codificar dados ocultos. Pode ser usado para marcas d\'água.',
+                    puaChar: 'Um caractere de uma Área de Uso Privado. Não possui significado padrão e é frequentemente usado para ícones personalizados ou marcas d\'água.',
                     default: 'Caractere Unicode com potencial uso em marca d\'água ou injeção'
                 }
             }
@@ -421,58 +430,45 @@
 
         function setLanguage(lang, buttonElement = null) {
             currentLanguage = lang;
-            
-            // Update button states
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Find the correct button to activate
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             if (buttonElement) {
                 buttonElement.classList.add('active');
             } else {
                 const targetBtn = document.querySelector(`[onclick="setLanguage('${lang}')"]`);
                 if (targetBtn) targetBtn.classList.add('active');
             }
-
-            // Update UI text
             document.querySelectorAll('[data-key]').forEach(element => {
                 const key = element.getAttribute('data-key');
                 if (translations[lang][key]) {
-                    if (element.tagName === 'TEXTAREA') {
-                        element.placeholder = translations[lang][key];
-                    } else {
-                        element.textContent = translations[lang][key];
-                    }
+                    if (element.tagName === 'TEXTAREA') element.placeholder = translations[lang][key];
+                    else element.textContent = translations[lang][key];
                 }
             });
-
-            // Update placeholder
             document.getElementById('textInput').placeholder = translations[lang].placeholder;
-
-            // Re-analyze if results are showing
             if (document.getElementById('results').classList.contains('show')) {
                 analyzeText();
             }
         }
 
         function t(key, ...args) {
-            let text = translations[currentLanguage][key] || key;
-            args.forEach((arg, index) => {
-                text = text.replace(`{${index}}`, arg);
-            });
+            const path = key.split('.');
+            let res = translations[currentLanguage];
+            for (let p of path) {
+                res = res[p];
+                if (res === undefined) return key;
+            }
+            let text = res;
+            args.forEach((arg, index) => text = text.replace(`{${index}}`, arg));
             return text;
         }
 
         function analyzeText() {
             const text = document.getElementById('textInput').value;
             const results = document.getElementById('results');
-            
-            if (!text.trim()) {
+            if (!text) {
                 alert(t('pleaseEnterText'));
                 return;
             }
-
             const analysis = performAnalysis(text);
             displayResults(analysis);
             results.classList.add('show');
@@ -482,27 +478,30 @@
             const suspiciousChars = [];
             const charCounts = {};
             const positions = {};
-            
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const code = char.charCodeAt(0);
+            let charIndex = 0;
+
+            for (let i = 0; i < text.length; i++, charIndex++) {
+                const code = text.codePointAt(i);
+                if (code === undefined) continue;
                 
-                // Detectar caracteres suspeitos
+                const char = String.fromCodePoint(code);
+                
                 if (isSuspiciousChar(char, code)) {
                     const charInfo = getCharacterInfo(char, code);
-                    
                     if (!charCounts[code]) {
                         charCounts[code] = 0;
                         positions[code] = [];
                         suspiciousChars.push(charInfo);
                     }
-                    
                     charCounts[code]++;
-                    positions[code].push(i);
+                    positions[code].push(charIndex);
+                }
+                
+                if (code > 0xFFFF) {
+                    i++;
                 }
             }
 
-            // Adicionar contagens e posições
             suspiciousChars.forEach(charInfo => {
                 charInfo.count = charCounts[charInfo.code];
                 charInfo.positions = positions[charInfo.code];
@@ -510,193 +509,144 @@
 
             return {
                 text: text,
-                totalChars: text.length,
-                suspiciousChars: suspiciousChars,
+                totalChars: charIndex,
+                suspiciousChars: suspiciousChars.sort((a,b) => b.count - a.count),
                 totalSuspicious: suspiciousChars.reduce((sum, char) => sum + char.count, 0),
                 riskLevel: calculateRiskLevel(suspiciousChars)
             };
         }
 
         function isSuspiciousChar(char, code) {
-            // Espaços em branco não padrão
+            if (code >= 32 && code <= 126) return false;
+            if (code === 9 || code === 10 || code === 13) return false;
             if (isNonStandardWhitespace(char, code)) return true;
-            
-            // Caracteres de controle
-            if (code < 32 && code !== 9 && code !== 10 && code !== 13) return true;
-            
-            // Caracteres Unicode especiais
-            if (isSpecialUnicodeChar(char, code)) return true;
-            
-            // Caracteres invisíveis
-            if (isInvisibleChar(char, code)) return true;
-            
-            // Caracteres de direção de texto
+            if (isControlChar(code)) return true;
+            if (isSpecialUnicodeChar(code)) return true;
             if (isDirectionalChar(code)) return true;
-            
+            if (isTagChar(code)) return true;
+            if (isPrivateUseChar(code)) return true;
             return false;
+        }
+        
+        function isControlChar(code) {
+             return (code >= 0 && code <= 31 && ![9, 10, 13].includes(code)) || (code >= 127 && code <= 159);
         }
 
         function isNonStandardWhitespace(char, code) {
-            const standardWhitespace = [32, 9, 10, 13]; // espaço, tab, LF, CR
+            const standardWhitespace = [32, 9, 10, 13];
             return /\s/.test(char) && !standardWhitespace.includes(code);
         }
 
-        function isSpecialUnicodeChar(char, code) {
-            // Caracteres de formatação
-            if (code >= 0x200B && code <= 0x200F) return true; // Zero-width chars
-            if (code >= 0x2028 && code <= 0x202F) return true; // Line/paragraph separators
-            if (code >= 0x2060 && code <= 0x206F) return true; // Invisible formatting
-            if (code >= 0xFE00 && code <= 0xFE0F) return true; // Variation selectors
-            if (code >= 0xFEFF) return true; // BOM and others
-            
-            return false;
-        }
-
-        function isInvisibleChar(char, code) {
-            // Zero-width characters
-            const invisibleCodes = [
-                0x200B, 0x200C, 0x200D, 0x200E, 0x200F,
-                0x2060, 0x2061, 0x2062, 0x2063, 0x2064,
-                0xFEFF
-            ];
-            return invisibleCodes.includes(code);
+        function isSpecialUnicodeChar(code) {
+            return (code >= 0x200B && code <= 0x200F) ||
+                   (code >= 0x2028 && code <= 0x202F) ||
+                   (code >= 0x2060 && code <= 0x206F) ||
+                   (code >= 0xFE00 && code <= 0xFE0F) ||
+                   code === 0xFEFF;
         }
 
         function isDirectionalChar(code) {
             return (code >= 0x202A && code <= 0x202E) || 
                    (code >= 0x2066 && code <= 0x2069);
         }
+        
+        function isTagChar(code) {
+            return code >= 0xE0020 && code <= 0xE007E;
+        }
+
+        function isPrivateUseChar(code) {
+            return (code >= 0xE000 && code <= 0xF8FF) ||
+                   (code >= 0xF0000 && code <= 0xFFFFD) ||
+                   (code >= 0x100000 && code <= 0x10FFFD);
+        }
 
         function getCharacterInfo(char, code) {
-            const info = {
+            return {
                 char: char,
                 code: code,
-                hex: '0x' + code.toString(16).toUpperCase(),
+                hex: 'U+' + code.toString(16).toUpperCase().padStart(4, '0'),
                 name: getCharacterName(code),
                 category: getCharacterCategory(code),
                 riskLevel: getCharacterRisk(code),
                 description: getCharacterDescription(code)
             };
-            
-            return info;
         }
 
         function getCharacterName(code) {
             const names = {
-                0x00A0: 'NO-BREAK SPACE',
-                0x2000: 'EN QUAD',
-                0x2001: 'EM QUAD',
-                0x2002: 'EN SPACE',
-                0x2003: 'EM SPACE',
-                0x2004: 'THREE-PER-EM SPACE',
-                0x2005: 'FOUR-PER-EM SPACE',
-                0x2006: 'SIX-PER-EM SPACE',
-                0x2007: 'FIGURE SPACE',
-                0x2008: 'PUNCTUATION SPACE',
-                0x2009: 'THIN SPACE',
-                0x200A: 'HAIR SPACE',
-                0x200B: 'ZERO WIDTH SPACE',
-                0x200C: 'ZERO WIDTH NON-JOINER',
-                0x200D: 'ZERO WIDTH JOINER',
-                0x200E: 'LEFT-TO-RIGHT MARK',
-                0x200F: 'RIGHT-TO-LEFT MARK',
-                0x2028: 'LINE SEPARATOR',
-                0x2029: 'PARAGRAPH SEPARATOR',
-                0x202A: 'LEFT-TO-RIGHT EMBEDDING',
-                0x202B: 'RIGHT-TO-LEFT EMBEDDING',
-                0x202C: 'POP DIRECTIONAL FORMATTING',
-                0x202D: 'LEFT-TO-RIGHT OVERRIDE',
-                0x202E: 'RIGHT-TO-LEFT OVERRIDE',
-                0x2060: 'WORD JOINER',
-                0x2061: 'FUNCTION APPLICATION',
-                0x2062: 'INVISIBLE TIMES',
-                0x2063: 'INVISIBLE SEPARATOR',
-                0x2064: 'INVISIBLE PLUS',
-                0x2066: 'LEFT-TO-RIGHT ISOLATE',
-                0x2067: 'RIGHT-TO-LEFT ISOLATE',
-                0x2068: 'FIRST STRONG ISOLATE',
-                0x2069: 'POP DIRECTIONAL ISOLATE',
+                0x00A0: 'NO-BREAK SPACE', 0x2000: 'EN QUAD', 0x2001: 'EM QUAD', 0x2002: 'EN SPACE',
+                0x2003: 'EM SPACE', 0x2004: 'THREE-PER-EM SPACE', 0x2005: 'FOUR-PER-EM SPACE',
+                0x2006: 'SIX-PER-EM SPACE', 0x2007: 'FIGURE SPACE', 0x2008: 'PUNCTUATION SPACE',
+                0x2009: 'THIN SPACE', 0x200A: 'HAIR SPACE', 0x200B: 'ZERO WIDTH SPACE',
+                0x200C: 'ZERO WIDTH NON-JOINER', 0x200D: 'ZERO WIDTH JOINER', 0x200E: 'LEFT-TO-RIGHT MARK',
+                0x200F: 'RIGHT-TO-LEFT MARK', 0x2028: 'LINE SEPARATOR', 0x2029: 'PARAGRAPH SEPARATOR',
+                0x202A: 'LEFT-TO-RIGHT EMBEDDING', 0x202B: 'RIGHT-TO-LEFT EMBEDDING',
+                0x202C: 'POP DIRECTIONAL FORMATTING', 0x202D: 'LEFT-TO-RIGHT OVERRIDE',
+                0x202E: 'RIGHT-TO-LEFT OVERRIDE', 0x2060: 'WORD JOINER', 0x2061: 'FUNCTION APPLICATION',
+                0x2062: 'INVISIBLE TIMES', 0x2063: 'INVISIBLE SEPARATOR', 0x2064: 'INVISIBLE PLUS',
+                0x2066: 'LEFT-TO-RIGHT ISOLATE', 0x2067: 'RIGHT-TO-LEFT ISOLATE',
+                0x2068: 'FIRST STRONG ISOLATE', 0x2069: 'POP DIRECTIONAL ISOLATE',
                 0xFEFF: 'ZERO WIDTH NO-BREAK SPACE (BOM)'
             };
-            
-            return names[code] || `U+${code.toString(16).toUpperCase().padStart(4, '0')}`;
+            if (names[code]) return names[code];
+            if (isTagChar(code)) return `TAG CHARACTER '${String.fromCodePoint(code - 0xE0000)}'`;
+            if (isPrivateUseChar(code)) return 'PRIVATE USE CHARACTER';
+            return `U+${code.toString(16).toUpperCase().padStart(4, '0')}`;
         }
 
         function getCharacterCategory(code) {
-            if (isNonStandardWhitespace(String.fromCharCode(code), code)) return 'Non-Standard Whitespace';
-            if (isInvisibleChar(String.fromCharCode(code), code)) return 'Invisible Character';
+            if (isTagChar(code)) return 'Tag Character';
+            if (isPrivateUseChar(code)) return 'Private Use Area';
+            if (isNonStandardWhitespace(String.fromCodePoint(code), code)) return 'Non-Standard Whitespace';
             if (isDirectionalChar(code)) return 'Directional Control';
-            if (code < 32) return 'Control Character';
+            if (isControlChar(code)) return 'Control Character';
+            if (isSpecialUnicodeChar(code)) return 'Invisible Character';
             return 'Special Unicode';
         }
 
         function getCharacterRisk(code) {
-            // Alto risco: caracteres que podem ser usados para injeção ou marca d'água
-            const highRisk = [0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064];
-            if (highRisk.includes(code)) return 'High';
-            
-            // Médio risco: espaços não-padrão e direcionais
-            if (isNonStandardWhitespace(String.fromCharCode(code), code) || isDirectionalChar(code)) return 'Medium';
-            
+            if (isTagChar(code) || isPrivateUseChar(code) || isDirectionalChar(code)) return 'High';
+            const mediumRisk = [0x200B, 0x200C, 0x200D, 0x2060];
+            if (mediumRisk.includes(code) || isNonStandardWhitespace(String.fromCodePoint(code), code)) return 'Medium';
             return 'Low';
         }
 
         function getCharacterDescription(code) {
-            const desc = translations[currentLanguage].descriptions[code] || translations[currentLanguage].descriptions.default;
-            return desc;
+            if (isTagChar(code)) return t('descriptions.tagChar');
+            if (isPrivateUseChar(code)) return t('descriptions.puaChar');
+            return translations[currentLanguage].descriptions[code] || t('descriptions.default');
         }
 
         function calculateRiskLevel(suspiciousChars) {
             let score = 0;
-            
             suspiciousChars.forEach(char => {
                 switch(char.riskLevel) {
-                    case 'High': score += 3 * char.count; break;
+                    case 'High': score += 5 * char.count; break;
                     case 'Medium': score += 2 * char.count; break;
                     case 'Low': score += 1 * char.count; break;
                 }
             });
-            
             if (score === 0) return 'Safe';
-            if (score <= 5) return 'Low';
-            if (score <= 15) return 'Medium';
+            if (score <= 10) return 'Low';
+            if (score <= 50) return 'Medium';
             return 'High';
         }
 
         function displayResults(analysis) {
             const summary = document.getElementById('summary');
             const container = document.getElementById('detailsContainer');
-            
-            // Resumo
             const riskClass = analysis.riskLevel.toLowerCase();
-            const riskEmoji = {
-                'safe': '✅',
-                'low': '⚠️',
-                'medium': '🟡',
-                'high': '🚨'
-            };
-            
+            const riskEmoji = {'safe': '✅', 'low': '⚠️', 'medium': '🟡', 'high': '🚨'};
             const translatedRiskLevel = t(riskClass);
             
             summary.innerHTML = `
-                <h2>${riskEmoji[riskClass]} ${t('riskLevel')}: ${translatedRiskLevel}</h2>
+                <h2>${riskEmoji[riskClass]} ${t('riskLevel')}: <span style="text-transform: capitalize;">${translatedRiskLevel}</span></h2>
                 <div class="stat-grid">
-                    <div class="stat-item">
-                        <div class="stat-number">${analysis.totalChars}</div>
-                        <div>${t('totalChars')}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">${analysis.suspiciousChars.length}</div>
-                        <div>${t('suspiciousTypes')}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">${analysis.totalSuspicious}</div>
-                        <div>${t('occurrences')}</div>
-                    </div>
-                </div>
-            `;
+                    <div class="stat-item"><div class="stat-number">${analysis.totalChars}</div><div>${t('totalChars')}</div></div>
+                    <div class="stat-item"><div class="stat-number">${analysis.suspiciousChars.length}</div><div>${t('suspiciousTypes')}</div></div>
+                    <div class="stat-item"><div class="stat-number">${analysis.totalSuspicious}</div><div>${t('occurrences')}</div></div>
+                </div>`;
             
-            // Detalhes
             container.innerHTML = '';
             
             if (analysis.suspiciousChars.length === 0) {
@@ -711,54 +661,34 @@
             analysis.suspiciousChars.forEach(char => {
                 const charDiv = document.createElement('div');
                 charDiv.className = 'char-item';
+                const positionTags = char.positions.slice(0, 10).map(pos => `<span class="position-tag">${pos}</span>`).join('');
+                const morePositions = char.positions.length > 10 ? `<span class="position-tag">+${char.positions.length - 10} ${t('more')}</span>` : '';
                 
-                const positionTags = char.positions.slice(0, 10).map(pos => 
-                    `<span class="position-tag">${pos}</span>`
-                ).join('');
-                
-                const morePositions = char.positions.length > 10 ? 
-                    `<span class="position-tag">+${char.positions.length - 10} ${t('more')}</span>` : '';
-                
-                const translatedCategory = translations[currentLanguage].categories[char.category] || char.category;
+                const categoryKey = Object.keys(translations.en.categories).find(key => translations.en.categories[key] === char.category);
+                const translatedCategory = categoryKey ? t(`categories.${categoryKey}`) : char.category;
                 const translatedRisk = t(char.riskLevel.toLowerCase());
                 
                 charDiv.innerHTML = `
-                    <div class="char-display">${char.char === ' ' ? t('space') : char.char}</div>
+                    <div class="char-display">${char.char.trim() === '' ? `[${char.name}]` : char.char}</div>
                     <div class="char-info">
-                        <div class="info-item">
-                            <span class="info-label">${t('name')}:</span> ${char.name}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">${t('code')}:</span> ${char.code} (${char.hex})
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">${t('category')}:</span> ${translatedCategory}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">${t('risk')}:</span> ${translatedRisk}
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">${t('count')}:</span> ${char.count}
-                        </div>
+                        <div class="info-item"><span class="info-label">${t('name')}:</span> ${char.name}</div>
+                        <div class="info-item"><span class="info-label">${t('code')}:</span> ${char.code} (${char.hex})</div>
+                        <div class="info-item"><span class="info-label">${t('category')}:</span> ${translatedCategory}</div>
+                        <div class="info-item"><span class="info-label">${t('risk')}:</span> ${translatedRisk}</div>
+                        <div class="info-item"><span class="info-label">${t('count')}:</span> ${char.count}</div>
                     </div>
                     <div class="${char.riskLevel === 'High' ? 'danger' : (char.riskLevel === 'Medium' ? 'warning' : 'safe')}">
                         <strong>${t('description')}:</strong> ${char.description}
                     </div>
                     <div class="positions">
                         <strong>${t('positions')}:</strong> ${positionTags}${morePositions}
-                    </div>
-                `;
-                
+                    </div>`;
                 detailsSection.appendChild(charDiv);
             });
-            
             container.appendChild(detailsSection);
         }
 
-        // Initialize with English on load
-        document.addEventListener('DOMContentLoaded', function() {
-            setLanguage('en');
-        });
+        document.addEventListener('DOMContentLoaded', () => setLanguage('en'));
     </script>
 </body>
 </html>
