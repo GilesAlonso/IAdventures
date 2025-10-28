@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Stripper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        #clearedText {
+            background-color: #f8f9fa;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .copy-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .copy-btn.copied {
+            background: #48bb78;
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            padding-top: 16px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stats span {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stats-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text Stripper</h1>
+        <p class="subtitle">Remove specific text from your content instantly</p>
+
+        <div class="input-group">
+            <label for="fullText">Full Message</label>
+            <textarea id="fullText" placeholder="Paste your full text here..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="stripText">Text to Strip</label>
+            <input type="text" id="stripText" placeholder="Enter text to remove...">
+        </div>
+
+        <div class="input-group">
+            <div class="output-header">
+                <label for="clearedText">Cleared Text</label>
+                <button id="copyBtn" class="copy-btn" disabled>Copy</button>
+            </div>
+            <textarea id="clearedText" readonly placeholder="Your cleared text will appear here..."></textarea>
+        </div>
+
+        <div id="stats" class="stats stats-hidden">
+            <div><span>Original:</span> <span id="originalCount">0</span> characters</div>
+            <div><span>Cleared:</span> <span id="clearedCount">0</span> characters</div>
+            <div><span>Removed:</span> <span id="removedCount">0</span> characters</div>
+        </div>
+    </div>
+
+    <script>
+        const fullTextEl = document.getElementById('fullText');
+        const stripTextEl = document.getElementById('stripText');
+        const clearedTextEl = document.getElementById('clearedText');
+        const copyBtn = document.getElementById('copyBtn');
+        const statsEl = document.getElementById('stats');
+        const originalCountEl = document.getElementById('originalCount');
+        const clearedCountEl = document.getElementById('clearedCount');
+        const removedCountEl = document.getElementById('removedCount');
+
+        function processText() {
+            const fullText = fullTextEl.value;
+            const stripText = stripTextEl.value;
+
+            let result;
+            if (stripText.trim() === '') {
+                result = fullText;
+            } else {
+                const escaped = stripText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(escaped, 'g');
+                result = fullText.replace(regex, '');
+            }
+
+            clearedTextEl.value = result;
+            copyBtn.disabled = !result;
+
+            if (fullText) {
+                statsEl.classList.remove('stats-hidden');
+                originalCountEl.textContent = fullText.length;
+                clearedCountEl.textContent = result.length;
+                removedCountEl.textContent = fullText.length - result.length;
+            } else {
+                statsEl.classList.add('stats-hidden');
+            }
+        }
+
+        fullTextEl.addEventListener('input', processText);
+        stripTextEl.addEventListener('input', processText);
+
+        copyBtn.addEventListener('click', function() {
+            navigator.clipboard.writeText(clearedTextEl.value).then(function() {
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('copied');
+                setTimeout(function() {
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    </script>
+</body>
+</html>
