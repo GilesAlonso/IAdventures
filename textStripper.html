@@ -167,56 +167,55 @@
     const clearedCountEl  = document.getElementById('clearedCount');
     const removedCountEl  = document.getElementById('removedCount');
 
-    // Aggressive normalization for tampered / protected content
-    function normalize(str) {
-        return str
-            .normalize("NFD")                                 // decompose accents/combining marks
-            .replace(/[\u0300-\u036f]/g, '')                  // remove combining marks
-            .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '')  // zero-width & directionals
-            .replace(/\s+/g, ' ')                             // collapse all whitespace to single space
-            .replace(/[.,!?;:'"“”‘’]+$/, '')                 // optional: remove trailing punctuation
+    // Aggressive normalization for copy-protection tricks
+    function normalize(str, removeTrailingPunc = true) {
+        let s = str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '')
+            .replace(/\s+/g, ' ')
             .trim();
+
+        if (removeTrailingPunc) {
+            s = s.replace(/[.,!?;:'"“”‘’]+$/, '').trim();
+        }
+        return s;
     }
 
     function processText() {
         let full = fullTextEl.value;
-        let toStrip = stripTextEl.value.trim();
+        let stripRaw = stripTextEl.value.trim();
 
-        if (!toStrip) {
+        if (!stripRaw) {
             clearedTextEl.value = full;
             updateStats(full, full);
             return;
         }
 
-        // ──────────────────────────────────────
-        // Customize these flags as needed
-        const CASE_INSENSITIVE    = true;
-        const NORMALIZE_BOTH      = true;     // usually yes for Coursera-like tamper
-        const STRIP_TRAILING_PUNC = true;     // helps with ?. vs .
-        // ──────────────────────────────────────
+        // ──────────────────────────────────────────────
+        // Settings – change here if needed
+        const CASE_INSENSITIVE     = true;
+        const NORMALIZE_BOTH       = true;     // almost always needed
+        const IGNORE_TRAILING_PUNC = true;     // handles ?. vs . or , etc.
+        // ──────────────────────────────────────────────
 
-        let text = full;
-        let target = toStrip;
-
-        if (NORMALIZE_BOTH) {
-            text   = normalize(text);
-            target = normalize(target);
-        }
-
-        if (STRIP_TRAILING_PUNC) {
-            target = target.replace(/[.,!?;:'"“”‘’]+$/, '').trim();
-        }
+        let text   = NORMALIZE_BOTH ? normalize(full, false) : full; // don't strip punc from full text
+        let target = normalize(stripRaw, IGNORE_TRAILING_PUNC);
 
         const flags = CASE_INSENSITIVE ? 'gi' : 'g';
         const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(escaped, flags);
 
-        const cleaned = text.replace(regex, '').replace(/\s+/g, ' ').trim();
+        // Debug: see what we're actually trying to match
+        console.log('Trying to remove (normalized):', target);
+        console.log('Found match?', regex.test(text));
 
-        clearedTextEl.value = cleaned;
+        const cleaned = text.replace(regex, '');
 
-        copyBtn.disabled = (cleaned === full);
-        updateStats(full, cleaned);
+        // Restore original spacing style somewhat (optional – comment out if unwanted)
+        clearedTextEl.value = cleaned.replace(/\s+/g, ' ').trim();
+
+        copyBtn.disabled = (cleaned.length === full.length);
+        updateStats(full, clearedTextEl.value);
     }
 
     function updateStats(orig, clean) {
@@ -243,9 +242,10 @@
                     copyBtn.classList.remove('copied');
                 }, 2000);
             })
-            .catch(err => console.error('Copy failed', err));
+            .catch(err => console.error('Copy failed:', err));
     });
 </script>
 </body>
 
 </html>
+
