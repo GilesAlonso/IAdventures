@@ -167,55 +167,60 @@
     const clearedCountEl  = document.getElementById('clearedCount');
     const removedCountEl  = document.getElementById('removedCount');
 
-    // Aggressive normalization for copy-protection tricks
-    function normalize(str, removeTrailingPunc = true) {
-        let s = str
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '')
-            .replace(/\s+/g, ' ')
+    function cleanForMatch(str) {
+        return str
+            .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '')  // zero-width junk
+            .replace(/\s*\.?\s*$/, '')  // remove trailing punctuation + space only at very end
             .trim();
-
-        if (removeTrailingPunc) {
-            s = s.replace(/[.,!?;:'"“”‘’]+$/, '').trim();
-        }
-        return s;
     }
 
     function processText() {
-        let full = fullTextEl.value;
-        let stripRaw = stripTextEl.value.trim();
+        const full = fullTextEl.value;
+        let targetRaw = stripTextEl.value.trim();
 
-        if (!stripRaw) {
+        if (!targetRaw) {
             clearedTextEl.value = full;
             updateStats(full, full);
             return;
         }
 
-        // ──────────────────────────────────────────────
-        // Settings – change here if needed
-        const CASE_INSENSITIVE     = true;
-        const NORMALIZE_BOTH       = true;     // almost always needed
-        const IGNORE_TRAILING_PUNC = true;     // handles ?. vs . or , etc.
-        // ──────────────────────────────────────────────
+        // Prepare clean version for matching (without destroying full text structure)
+        const targetClean = cleanForMatch(targetRaw);
 
-        let text   = NORMALIZE_BOTH ? normalize(full, false) : full; // don't strip punc from full text
-        let target = normalize(stripRaw, IGNORE_TRAILING_PUNC);
+        // Escape for regex
+        const escaped = targetClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-        const flags = CASE_INSENSITIVE ? 'gi' : 'g';
-        const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(escaped, flags);
+        // Try several common variations that appear in Coursera copy-paste
+        const patterns = [
+            new RegExp(escaped + '\\.\\s*', 'g'),                  // ends with .
+            new RegExp(escaped + '\\?\\.\\s*', 'g'),               // ends with ?.
+            new RegExp(escaped + '\\?\\s*', 'g'),                  // ends with ?
+            new RegExp(escaped + '\\s*', 'g')                      // no punctuation at end
+        ];
 
-        // Debug: see what we're actually trying to match
-        console.log('Trying to remove (normalized):', target);
-        console.log('Found match?', regex.test(text));
+        let cleaned = full;
+        let removedSomething = false;
 
-        const cleaned = text.replace(regex, '');
+        patterns.forEach(regex => {
+            const newCleaned = cleaned.replace(regex, '');
+            if (newCleaned.length < cleaned.length) {
+                removedSomething = true;
+                cleaned = newCleaned;
+            }
+        });
 
-        // Restore original spacing style somewhat (optional – comment out if unwanted)
-        clearedTextEl.value = cleaned.replace(/\s+/g, ' ').trim();
+        // Final cleanup: remove any double spaces/newlines left behind
+        cleaned = cleaned.replace(/\n\s*\n+/g, '\n\n').replace(/ +/g, ' ').trim();
 
-        copyBtn.disabled = (cleaned.length === full.length);
-        updateStats(full, clearedTextEl.value);
+        clearedTextEl.value = cleaned;
+
+        copyBtn.disabled = !removedSomething;
+        updateStats(full, cleaned);
+
+        // Debug – open F12 → Console to see what happened
+        console.log('Target (cleaned):', targetClean);
+        console.log('Removed something?', removedSomething);
+        console.log('Length change:', full.length - cleaned.length);
     }
 
     function updateStats(orig, clean) {
@@ -248,4 +253,5 @@
 </body>
 
 </html>
+
 
