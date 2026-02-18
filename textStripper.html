@@ -158,56 +158,94 @@
     </div>
 
     <script>
-        const fullTextEl = document.getElementById('fullText');
-        const stripTextEl = document.getElementById('stripText');
-        const clearedTextEl = document.getElementById('clearedText');
-        const copyBtn = document.getElementById('copyBtn');
-        const statsEl = document.getElementById('stats');
-        const originalCountEl = document.getElementById('originalCount');
-        const clearedCountEl = document.getElementById('clearedCount');
-        const removedCountEl = document.getElementById('removedCount');
+    const fullTextEl    = document.getElementById('fullText');
+    const stripTextEl   = document.getElementById('stripText');
+    const clearedTextEl = document.getElementById('clearedText');
+    const copyBtn       = document.getElementById('copyBtn');
+    const statsEl       = document.getElementById('stats');
+    const originalCountEl = document.getElementById('originalCount');
+    const clearedCountEl  = document.getElementById('clearedCount');
+    const removedCountEl  = document.getElementById('removedCount');
 
-        function processText() {
-            const fullText = fullTextEl.value;
-            const stripText = stripTextEl.value;
+    // Aggressive normalization for tampered / protected content
+    function normalize(str) {
+        return str
+            .normalize("NFD")                                 // decompose accents/combining marks
+            .replace(/[\u0300-\u036f]/g, '')                  // remove combining marks
+            .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '')  // zero-width & directionals
+            .replace(/\s+/g, ' ')                             // collapse all whitespace to single space
+            .replace(/[.,!?;:'"“”‘’]+$/, '')                 // optional: remove trailing punctuation
+            .trim();
+    }
 
-            let result;
-            if (stripText.trim() === '') {
-                result = fullText;
-            } else {
-                const escaped = stripText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(escaped, 'g');
-                result = fullText.replace(regex, '');
-            }
+    function processText() {
+        let full = fullTextEl.value;
+        let toStrip = stripTextEl.value.trim();
 
-            clearedTextEl.value = result;
-            copyBtn.disabled = !result;
-
-            if (fullText) {
-                statsEl.classList.remove('stats-hidden');
-                originalCountEl.textContent = fullText.length;
-                clearedCountEl.textContent = result.length;
-                removedCountEl.textContent = fullText.length - result.length;
-            } else {
-                statsEl.classList.add('stats-hidden');
-            }
+        if (!toStrip) {
+            clearedTextEl.value = full;
+            updateStats(full, full);
+            return;
         }
 
-        fullTextEl.addEventListener('input', processText);
-        stripTextEl.addEventListener('input', processText);
+        // ──────────────────────────────────────
+        // Customize these flags as needed
+        const CASE_INSENSITIVE    = true;
+        const NORMALIZE_BOTH      = true;     // usually yes for Coursera-like tamper
+        const STRIP_TRAILING_PUNC = true;     // helps with ?. vs .
+        // ──────────────────────────────────────
 
-        copyBtn.addEventListener('click', function() {
-            navigator.clipboard.writeText(clearedTextEl.value).then(function() {
+        let text = full;
+        let target = toStrip;
+
+        if (NORMALIZE_BOTH) {
+            text   = normalize(text);
+            target = normalize(target);
+        }
+
+        if (STRIP_TRAILING_PUNC) {
+            target = target.replace(/[.,!?;:'"“”‘’]+$/, '').trim();
+        }
+
+        const flags = CASE_INSENSITIVE ? 'gi' : 'g';
+        const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escaped, flags);
+
+        const cleaned = text.replace(regex, '').replace(/\s+/g, ' ').trim();
+
+        clearedTextEl.value = cleaned;
+
+        copyBtn.disabled = (cleaned === full);
+        updateStats(full, cleaned);
+    }
+
+    function updateStats(orig, clean) {
+        if (!orig.trim()) {
+            statsEl.classList.add('stats-hidden');
+            return;
+        }
+        statsEl.classList.remove('stats-hidden');
+        originalCountEl.textContent = orig.length;
+        clearedCountEl.textContent  = clean.length;
+        removedCountEl.textContent  = orig.length - clean.length;
+    }
+
+    fullTextEl.addEventListener('input', processText);
+    stripTextEl.addEventListener('input', processText);
+
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(clearedTextEl.value)
+            .then(() => {
                 copyBtn.textContent = 'Copied!';
                 copyBtn.classList.add('copied');
-                setTimeout(function() {
+                setTimeout(() => {
                     copyBtn.textContent = 'Copy';
                     copyBtn.classList.remove('copied');
                 }, 2000);
-            }).catch(function(err) {
-                console.error('Failed to copy:', err);
-            });
-        });
-    </script>
+            })
+            .catch(err => console.error('Copy failed', err));
+    });
+</script>
 </body>
+
 </html>
