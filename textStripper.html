@@ -158,69 +158,57 @@
     </div>
 
     <script>
-    const fullTextEl    = document.getElementById('fullText');
-    const stripTextEl   = document.getElementById('stripText');
+    const fullTextEl = document.getElementById('fullText');
+    const stripTextEl = document.getElementById('stripText');
     const clearedTextEl = document.getElementById('clearedText');
-    const copyBtn       = document.getElementById('copyBtn');
-    const statsEl       = document.getElementById('stats');
+    const copyBtn = document.getElementById('copyBtn');
+    const statsEl = document.getElementById('stats');
     const originalCountEl = document.getElementById('originalCount');
-    const clearedCountEl  = document.getElementById('clearedCount');
-    const removedCountEl  = document.getElementById('removedCount');
+    const clearedCountEl = document.getElementById('clearedCount');
+    const removedCountEl = document.getElementById('removedCount');
 
-    function cleanForMatch(str) {
-        return str
-            .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '')  // zero-width junk
-            .replace(/\s*\.?\s*$/, '')  // remove trailing punctuation + space only at very end
-            .trim();
+    function cleanInvisible(str) {
+        // Remove zero-width/invisible/directional characters
+        return str.replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u200E\u200F]/g, '');
     }
 
     function processText() {
-        const full = fullTextEl.value;
-        let targetRaw = stripTextEl.value.trim();
+        const fullRaw = fullTextEl.value;
+        let stripRaw = stripTextEl.value.trim();
 
-        if (!targetRaw) {
-            clearedTextEl.value = full;
-            updateStats(full, full);
+        if (!stripRaw) {
+            clearedTextEl.value = fullRaw;
+            updateStats(fullRaw, fullRaw);
             return;
         }
 
-        // Prepare clean version for matching (without destroying full text structure)
-        const targetClean = cleanForMatch(targetRaw);
+        // Clean invisibles from both
+        const fullText = cleanInvisible(fullRaw);
+        const stripText = cleanInvisible(stripRaw);
+
+        // Normalize strip text: collapse whitespace to single spaces, trim
+        const target = stripText.replace(/\s+/g, ' ').trim();
+
+        if (!target) {
+            clearedTextEl.value = fullRaw;
+            updateStats(fullRaw, fullRaw);
+            return;
+        }
 
         // Escape for regex
-        const escaped = targetClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-        // Try several common variations that appear in Coursera copy-paste
-        const patterns = [
-            new RegExp(escaped + '\\.\\s*', 'g'),                  // ends with .
-            new RegExp(escaped + '\\?\\.\\s*', 'g'),               // ends with ?.
-            new RegExp(escaped + '\\?\\s*', 'g'),                  // ends with ?
-            new RegExp(escaped + '\\s*', 'g')                      // no punctuation at end
-        ];
+        // Make spaces flexible: match 0+ whitespace in full text
+        escaped = escaped.replace(/ /g, '\\s*');
 
-        let cleaned = full;
-        let removedSomething = false;
+        const regex = new RegExp(escaped, 'g');  // Add 'gi' for case-insensitive
 
-        patterns.forEach(regex => {
-            const newCleaned = cleaned.replace(regex, '');
-            if (newCleaned.length < cleaned.length) {
-                removedSomething = true;
-                cleaned = newCleaned;
-            }
-        });
-
-        // Final cleanup: remove any double spaces/newlines left behind
-        cleaned = cleaned.replace(/\n\s*\n+/g, '\n\n').replace(/ +/g, ' ').trim();
+        const cleaned = fullText.replace(regex, '');
 
         clearedTextEl.value = cleaned;
 
-        copyBtn.disabled = !removedSomething;
-        updateStats(full, cleaned);
-
-        // Debug – open F12 → Console to see what happened
-        console.log('Target (cleaned):', targetClean);
-        console.log('Removed something?', removedSomething);
-        console.log('Length change:', full.length - cleaned.length);
+        copyBtn.disabled = (cleaned === fullText);
+        updateStats(fullRaw, cleaned);
     }
 
     function updateStats(orig, clean) {
@@ -230,8 +218,8 @@
         }
         statsEl.classList.remove('stats-hidden');
         originalCountEl.textContent = orig.length;
-        clearedCountEl.textContent  = clean.length;
-        removedCountEl.textContent  = orig.length - clean.length;
+        clearedCountEl.textContent = clean.length;
+        removedCountEl.textContent = orig.length - clean.length;
     }
 
     fullTextEl.addEventListener('input', processText);
@@ -253,5 +241,6 @@
 </body>
 
 </html>
+
 
 
